@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Income &amp; Expenditure — Paylink</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black:       #0a0a0a;
+      --white:       #ffffff;
+      --gray-50:     #f7f8fa;
+      --gray-100:    #eef0f4;
+      --gray-300:    #c8cdd8;
+      --gray-500:    #6b7280;
+      --green:       #00a651;
+      --green-light: #e6f7ef;
+      --red:         #e53e3e;
+      --amber:       #d97706;
+      --radius:      10px;
+      --shadow:      0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--black); min-height: 100vh; }
+
+    /* HEADER */
+    header { background: var(--black); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    header img { height: 28px; }
+    .header-badge { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--gray-300); border: 1px solid #333; padding: 4px 10px; border-radius: 20px; }
+
+    /* STATUS BAR */
+    #status-bar { background: var(--gray-100); border-bottom: 1px solid var(--gray-300); padding: 10px 40px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--gray-500); transition: background .22s, color .22s; }
+    #status-bar.listening { background: #fffbeb; color: var(--amber); border-bottom-color: #fcd34d; }
+    #status-bar.updating  { background: #eff6ff; color: #3b82f6; border-bottom-color: #93c5fd; }
+    #status-bar.complete  { background: var(--green-light); color: var(--green); border-bottom-color: #6ee7b7; }
+    #status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-300); flex-shrink: 0; transition: background .22s; }
+    #status-bar.listening #status-dot { background: var(--amber); animation: pulse 1.4s infinite; }
+    #status-bar.updating  #status-dot { background: #3b82f6; animation: pulse .8s infinite; }
+    #status-bar.complete  #status-dot { background: var(--green); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+    /* PAGE LAYOUT */
+    .page-body { display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1180px; margin: 36px auto 60px; padding: 0 24px; align-items: start; }
+    @media (max-width: 860px) { .page-body { grid-template-columns: 1fr; } .sidebar { order: -1; } }
+
+    /* FORM HEADER */
+    .form-header { margin-bottom: 24px; }
+    .form-header h1 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; color: var(--black); line-height: 1.2; margin-bottom: 6px; }
+    .form-header p { font-size: 13px; color: var(--gray-500); }
+
+    /* CARD */
+    .card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+    .card-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 10px; }
+    .card-icon { width: 30px; height: 30px; background: var(--black); border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-icon svg { width: 15px; height: 15px; fill: none; stroke: white; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--black); }
+    .card-body { padding: 18px 20px; }
+
+    /* SUB LABELS */
+    .sub-label { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--gray-500); margin: 18px 0 10px; }
+    .sub-label:first-child { margin-top: 0; }
+
+    /* GRID */
+    .grid { display: grid; gap: 12px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .col-span { grid-column: 1 / -1; }
+    @media (max-width: 560px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* FIELD */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-500); }
+    .field-value { min-height: 38px; padding: 8px 11px; background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: 7px; font-size: 13.5px; font-weight: 500; color: var(--gray-300); display: flex; align-items: center; position: relative; overflow: hidden; transition: color .3s, border-color .3s, background .3s; }
+    .field-value::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(0,166,81,.08), transparent); transform: translateX(-100%); transition: none; }
+    .field-value.filling::after { transform: translateX(100%); transition: transform .6s ease; }
+    .field-value.filled { color: var(--black); border-color: rgba(0,166,81,.25); background: var(--white); }
+    .currency-tag { position: absolute; right: 10px; font-size: 10px; font-weight: 500; letter-spacing: .04em; color: var(--gray-300); transition: color .3s; pointer-events: none; }
+    .field-value.filled .currency-tag { color: var(--green); }
+
+    /* SUMMARY */
+    #summary { display: none; background: var(--black); border-radius: var(--radius); padding: 20px; color: var(--white); margin-bottom: 16px; }
+    #summary.visible { display: block; animation: fadeUp .4s ease; }
+    #summary h3 { font-family: 'DM Serif Display', serif; font-size: 16px; font-weight: 400; margin-bottom: 14px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .summary-label { font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 3px; }
+    .summary-val { font-size: 18px; font-weight: 600; }
+    .summary-val.green { color: var(--green); }
+    .summary-val.red { color: var(--red); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* SIDEBAR */
+    .sidebar { position: sticky; top: 88px; }
+    .voice-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+    .voice-card-header { background: var(--black); padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+    .voice-card-header span { font-size: 13px; font-weight: 600; color: var(--white); }
+    .voice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+    .voice-widget-wrap { padding: 16px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+
+    /* PROGRESS */
+    .progress-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+    .progress-card h4 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 14px; }
+    .progress-bar-wrap { margin-bottom: 10px; }
+    .progress-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-500); margin-bottom: 4px; }
+    .progress-bar-track { height: 5px; background: var(--gray-100); border-radius: 10px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--green); border-radius: 10px; width: 0%; transition: width .5s cubic-bezier(.4,0,.2,1); }
+
+    /* FOOTER */
+    footer { text-align: center; font-size: 11px; color: var(--gray-300); padding: 0 0 28px; }
+    footer span { color: var(--gray-500); }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://paylinksolutions.co.uk/wp-content/uploads/2023/09/White-Logo-New-1024x272.png" alt="Paylink" />
+  <span class="header-badge">Affordability Intelligence</span>
+</header>
+
+<div id="status-bar" class="listening">
+  <div id="status-dot"></div>
+  <span id="status-text">Listening for Clara — form will update as the conversation progresses…</span>
+</div>
+
+<div class="page-body">
+
+  <!-- FORM COLUMN -->
+  <div class="form-col">
+    <div class="form-header">
+      <h1>Income &amp; Expenditure Statement</h1>
+      <p>Captured live via Clara voice AI — fields populate as each answer is confirmed</p>
+    </div>
+
+    <div id="summary">
+      <h3>Financial Summary</h3>
+      <div class="summary-grid">
+        <div><div class="summary-label">Monthly Income</div><div class="summary-val green" id="sum-income">—</div></div>
+        <div><div class="summary-label">Monthly Outgoings</div><div class="summary-val" id="sum-outgoings">—</div></div>
+        <div><div class="summary-label">Surplus / Deficit</div><div class="summary-val" id="sum-surplus">—</div></div>
+      </div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+        <span class="card-title">Personal Details</span>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-2">
+          <div class="field"><label>Full Name</label><div class="field-value" id="f-full_name">—</div></div>
+          <div class="field"><label>Date of Birth</label><div class="field-value" id="f-date_of_birth">—</div></div>
+          <div class="field col-span"><label>Address</label><div class="field-value" id="f-address">—</div></div>
+          <div class="field"><label>Employment Status</label><div class="field-value" id="f-employment_status">—</div></div>
+          <div class="field"><label>Housing Tenure</label><div class="field-value" id="f-housing_tenure">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOUSEHOLD -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg></div>
+        <span class="card-title">Household Composition</span>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-3">
+          <div class="field"><label>Children Under 16</label><div class="field-value" id="f-dependent_children_under_16">—</div></div>
+          <div class="field"><label>Children 16–18</label><div class="field-value" id="f-dependent_children_16_18">—</div></div>
+          <div class="field"><label>Other Dependants</label><div class="field-value" id="f-other_dependants">—</div></div>
+          <div class="field"><label>Non-Dependants</label><div class="field-value" id="f-non_dependants">—</div></div>
+          <div class="field"><label>Vehicles Owned</label><div class="field-value" id="f-vehicles">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <span class="card-title">Monthly Income</span>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-2">
+          <div class="field"><label>Client Salary (Take-home)</label><div class="field-value" id="f-monthly_salary_client">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Partner Salary</label><div class="field-value" id="f-monthly_salary_partner">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Child Benefit</label><div class="field-value" id="f-child_benefit">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Other Income</label><div class="field-value" id="f-other_income">—<span class="currency-tag">GBP / mo</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPENDITURE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <span class="card-title">Monthly Expenditure</span>
+      </div>
+      <div class="card-body">
+        <div class="sub-label">Housing</div>
+        <div class="grid grid-2">
+          <div class="field"><label>Rent / Mortgage</label><div class="field-value" id="f-monthly_rent_or_mortgage">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Secured Loans</label><div class="field-value" id="f-monthly_secured_loans">—<span class="currency-tag">GBP / mo</span></div></div>
+        </div>
+        <div class="sub-label">Transport</div>
+        <div class="grid grid-3">
+          <div class="field"><label>Vehicle Finance</label><div class="field-value" id="f-monthly_vehicle_finance">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Car Insurance</label><div class="field-value" id="f-monthly_car_insurance">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Fuel &amp; Parking</label><div class="field-value" id="f-monthly_fuel_parking">—<span class="currency-tag">GBP / mo</span></div></div>
+        </div>
+        <div class="sub-label">Communications &amp; Food</div>
+        <div class="grid grid-3">
+          <div class="field"><label>Mobile Phone(s)</label><div class="field-value" id="f-monthly_mobile">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Internet &amp; Broadband</label><div class="field-value" id="f-monthly_broadband">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Groceries</label><div class="field-value" id="f-monthly_groceries">—<span class="currency-tag">GBP / mo</span></div></div>
+        </div>
+        <div class="sub-label">Pensions &amp; Insurance</div>
+        <div class="grid grid-2">
+          <div class="field"><label>Pension Payments</label><div class="field-value" id="f-monthly_pension">—<span class="currency-tag">GBP / mo</span></div></div>
+          <div class="field"><label>Life Insurance</label><div class="field-value" id="f-monthly_life_insurance">—<span class="currency-tag">GBP / mo</span></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="voice-card">
+      <div class="voice-card-header">
+        <div class="voice-dot"></div>
+        <span>Clara — Voice Assistant</span>
+      </div>
+      <div class="voice-widget-wrap" id="voice-widget-container"></div>
+    </div>
+    <div class="progress-card">
+      <h4>Form Completion</h4>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>Personal Details</span><span id="prog-personal-pct">0%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-personal"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>Income</span><span id="prog-income-pct">0%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-income"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>Expenditure</span><span id="prog-expenditure-pct">0%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-expenditure"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Powered by <span>Paylink Affordability Intelligence</span> &nbsp;·&nbsp; Secured &amp; encrypted &nbsp;·&nbsp; UK GDPR compliant</footer>
+
+<!-- COGNIGY WEBRTC WIDGET -->
+<script src="https://github.com/Cognigy/click-to-call-widget/releases/latest/download/webRTCWidget.js"></script>
+<script>
+  addEventListener("load", (event) => {
+    if (window.initWebRTCWidget) {
+      window.initWebRTCWidget("https://endpoint-trial.cognigy.ai/a8598ed6c99c45261ad01451d430eeb7c340a2ab447a80e17a7c67908ed3ad3c");
+    }
+  });
+</script>
+
+<!-- NTFY SSE + FORM LOGIC -->
+<script>
+  const NTFY_TOPIC = 'paylink-clara-ie-4x9mw2';
+  const NTFY_URL   = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
+
+  const MONEY_FIELDS = new Set([
+    'monthly_salary_client','monthly_salary_partner','child_benefit','other_income',
+    'monthly_rent_or_mortgage','monthly_secured_loans','monthly_vehicle_finance',
+    'monthly_car_insurance','monthly_fuel_parking','monthly_mobile','monthly_broadband',
+    'monthly_groceries','monthly_pension','monthly_life_insurance'
+  ]);
+
+  const PERSONAL_FIELDS    = ['full_name','date_of_birth','address','employment_status','housing_tenure','dependent_children_under_16','dependent_children_16_18','other_dependants','non_dependants','vehicles'];
+  const INCOME_FIELDS      = ['monthly_salary_client','monthly_salary_partner','child_benefit','other_income'];
+  const EXPENDITURE_FIELDS = ['monthly_rent_or_mortgage','monthly_secured_loans','monthly_vehicle_finance','monthly_car_insurance','monthly_fuel_parking','monthly_mobile','monthly_broadband','monthly_groceries','monthly_pension','monthly_life_insurance'];
+  const ALL_FIELDS         = PERSONAL_FIELDS.concat(INCOME_FIELDS).concat(EXPENDITURE_FIELDS);
+
+  var filled = {};
+
+  function fmtValue(key, val) {
+    if (val === null || val === undefined) return null;
+    if (MONEY_FIELDS.has(key)) {
+      var n = parseFloat(val);
+      if (isNaN(n)) return String(val);
+      return '\u00a3' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return String(val);
+  }
+
+  function fillField(key, val) {
+    var el = document.getElementById('f-' + key);
+    if (!el) return;
+    var display = fmtValue(key, val);
+    if (display === null) return;
+
+    var tag = el.querySelector('.currency-tag');
+    el.classList.add('filling');
+
+    setTimeout(function() {
+      while (el.firstChild) el.removeChild(el.firstChild);
+      el.appendChild(document.createTextNode(display));
+      if (tag) el.appendChild(tag);
+      el.classList.remove('filling');
+      el.classList.add('filled');
+      filled[key] = true;
+      updateProgress();
+      updateSummary();
+    }, 320);
+  }
+
+  function mergePayload(data) {
+    ALL_FIELDS.forEach(function(key) {
+      if (data[key] !== undefined && data[key] !== null && data[key] !== '' && !filled[key]) {
+        fillField(key, data[key]);
+      }
+    });
+  }
+
+  function pct(fields) {
+    var done = fields.filter(function(f) { return filled[f]; }).length;
+    return Math.round((done / fields.length) * 100);
+  }
+
+  function updateProgress() {
+    var sections = [
+      { fields: PERSONAL_FIELDS,    bar: 'prog-personal',    lbl: 'prog-personal-pct'    },
+      { fields: INCOME_FIELDS,      bar: 'prog-income',      lbl: 'prog-income-pct'      },
+      { fields: EXPENDITURE_FIELDS, bar: 'prog-expenditure', lbl: 'prog-expenditure-pct' }
+    ];
+    sections.forEach(function(s) {
+      var p = pct(s.fields);
+      document.getElementById(s.bar).style.width    = p + '%';
+      document.getElementById(s.lbl).textContent = p + '%';
+    });
+  }
+
+  function getNum(id) {
+    var el = document.getElementById('f-' + id);
+    if (!el) return 0;
+    var raw = el.textContent.replace(/[^0-9.]/g, '');
+    return parseFloat(raw) || 0;
+  }
+
+  function updateSummary() {
+    var income   = INCOME_FIELDS.reduce(function(s,k){ return s + getNum(k); }, 0);
+    var outgoing = EXPENDITURE_FIELDS.reduce(function(s,k){ return s + getNum(k); }, 0);
+    if (income === 0 && outgoing === 0) return;
+
+    var surplus = income - outgoing;
+    var gbp = function(n) { return '\u00a3' + Math.abs(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+    document.getElementById('sum-income').textContent    = gbp(income);
+    document.getElementById('sum-outgoings').textContent = gbp(outgoing);
+
+    var surplusEl = document.getElementById('sum-surplus');
+    surplusEl.textContent = (surplus >= 0 ? '+' : '\u2212') + gbp(surplus);
+    surplusEl.className   = 'summary-val ' + (surplus >= 0 ? 'green' : 'red');
+    document.getElementById('summary').classList.add('visible');
+  }
+
+  function setStatus(state, text) {
+    document.getElementById('status-bar').className = state;
+    document.getElementById('status-text').textContent = text;
+  }
+
+  function startListening() {
+    setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
+    var es = new EventSource(NTFY_URL);
+
+    es.addEventListener('message', function(e) {
+      try {
+        var msg  = JSON.parse(e.data);
+        var data = typeof msg.message === 'string' ? JSON.parse(msg.message) : msg.message;
+
+        setStatus('updating', 'Receiving data from Clara\u2026');
+        mergePayload(data);
+
+        var allDone = ALL_FIELDS.every(function(f) { return filled[f]; });
+        setTimeout(function() {
+          if (allDone) {
+            setStatus('complete', 'Form complete — all fields captured from Clara.');
+            es.close();
+          } else {
+            setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
+          }
+        }, 800);
+
+      } catch(err) {
+        console.warn('Could not parse ntfy message:', err);
+      }
+    });
+  }
+
+  startListening();
+</script>
+
+</body>
+</html>
