@@ -25,9 +25,9 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--gray-50); color: var(--black); min-height: 100vh; }
 
-    /* HEADER */
-    header { background: var(--black); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    header img { height: 28px; }
+    /* PAGE HEADER */
+    .page-header { background: var(--black); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .page-header img { height: 28px; }
     .header-badge { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--gray-300); border: 1px solid #333; padding: 4px 10px; border-radius: 20px; }
 
     /* STATUS BAR */
@@ -51,12 +51,19 @@
     .form-header p { font-size: 13px; color: var(--gray-500); }
 
     /* CARD */
-    .card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+    .card { background: var(--white); border: 1px solid var(--gray-100); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; transition: box-shadow .4s, border-color .4s; }
+    .card.section-active { border-color: rgba(0,166,81,.35); box-shadow: 0 0 0 3px rgba(0,166,81,.08), var(--shadow); }
     .card-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 10px; }
-    .card-icon { width: 30px; height: 30px; background: var(--black); border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-icon { width: 30px; height: 30px; background: var(--black); border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .4s; }
+    .card.section-active .card-icon { background: var(--green); }
     .card-icon svg { width: 15px; height: 15px; fill: none; stroke: white; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .card-title { font-size: 13px; font-weight: 600; color: var(--black); }
     .card-body { padding: 18px 20px; }
+
+    /* SECTION COMPLETE BADGE */
+    .section-badge { margin-left: auto; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--green); background: var(--green-light); padding: 3px 8px; border-radius: 20px; opacity: 0; transition: opacity .4s; }
+    .card.section-done .section-badge { opacity: 1; }
+    .card.section-done .card-icon { background: var(--green); }
 
     /* SUB LABELS */
     .sub-label { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--gray-500); margin: 18px 0 10px; }
@@ -106,14 +113,14 @@
     .progress-bar-track { height: 5px; background: var(--gray-100); border-radius: 10px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: var(--green); border-radius: 10px; width: 0%; transition: width .5s cubic-bezier(.4,0,.2,1); }
 
-    /* FOOTER */
-    footer { text-align: center; font-size: 11px; color: var(--gray-300); padding: 0 0 28px; }
-    footer span { color: var(--gray-500); }
+    /* PAGE FOOTER */
+    .page-footer { text-align: center; font-size: 11px; color: var(--gray-300); padding: 0 0 28px; }
+    .page-footer span { color: var(--gray-500); }
   </style>
 </head>
 <body>
 
-<header>
+<header class="page-header">
   <img src="https://paylinksolutions.co.uk/wp-content/uploads/2023/09/White-Logo-New-1024x272.png" alt="Paylink" />
   <span class="header-badge">Affordability Intelligence</span>
 </header>
@@ -125,11 +132,10 @@
 
 <div class="page-body">
 
-  <!-- FORM COLUMN -->
   <div class="form-col">
     <div class="form-header">
       <h1>Income &amp; Expenditure Statement</h1>
-      <p>Captured live via Clara voice AI — fields populate as each answer is confirmed</p>
+      <p>Captured live via Clara voice AI — fields populate as each section is confirmed</p>
     </div>
 
     <div id="summary">
@@ -142,10 +148,11 @@
     </div>
 
     <!-- PERSONAL -->
-    <div class="card">
+    <div class="card" id="card-personal">
       <div class="card-header">
         <div class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
         <span class="card-title">Personal Details</span>
+        <span class="section-badge">Complete</span>
       </div>
       <div class="card-body">
         <div class="grid grid-2">
@@ -159,10 +166,11 @@
     </div>
 
     <!-- HOUSEHOLD -->
-    <div class="card">
+    <div class="card" id="card-household">
       <div class="card-header">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg></div>
         <span class="card-title">Household Composition</span>
+        <span class="section-badge">Complete</span>
       </div>
       <div class="card-body">
         <div class="grid grid-3">
@@ -176,10 +184,11 @@
     </div>
 
     <!-- INCOME -->
-    <div class="card">
+    <div class="card" id="card-income">
       <div class="card-header">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
         <span class="card-title">Monthly Income</span>
+        <span class="section-badge">Complete</span>
       </div>
       <div class="card-body">
         <div class="grid grid-2">
@@ -192,10 +201,11 @@
     </div>
 
     <!-- EXPENDITURE -->
-    <div class="card">
+    <div class="card" id="card-expenditure">
       <div class="card-header">
         <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
         <span class="card-title">Monthly Expenditure</span>
+        <span class="section-badge">Complete</span>
       </div>
       <div class="card-body">
         <div class="sub-label">Housing</div>
@@ -241,6 +251,10 @@
         <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-personal"></div></div>
       </div>
       <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>Household</span><span id="prog-household-pct">0%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-household"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
         <div class="progress-bar-label"><span>Income</span><span id="prog-income-pct">0%</span></div>
         <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-income"></div></div>
       </div>
@@ -253,12 +267,12 @@
 
 </div>
 
-<footer>Powered by <span>Paylink Affordability Intelligence</span> &nbsp;·&nbsp; Secured &amp; encrypted &nbsp;·&nbsp; UK GDPR compliant</footer>
+<footer class="page-footer">Powered by <span>Paylink Affordability Intelligence</span> &nbsp;·&nbsp; Secured &amp; encrypted &nbsp;·&nbsp; UK GDPR compliant</footer>
 
 <!-- COGNIGY WEBRTC WIDGET -->
 <script src="https://github.com/Cognigy/click-to-call-widget/releases/latest/download/webRTCWidget.js"></script>
 <script>
-  addEventListener("load", (event) => {
+  addEventListener("load", function() {
     if (window.initWebRTCWidget) {
       window.initWebRTCWidget("https://endpoint-trial.cognigy.ai/a3bc59fe4827a24a323b1d4ae19d8d7b4d953ec47318d56387eed7908239940a");
     }
@@ -267,23 +281,66 @@
 
 <!-- NTFY SSE + FORM LOGIC -->
 <script>
-  const NTFY_TOPIC = 'paylink-clara-ie-4x9mw2';
-  const NTFY_URL   = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
+  var NTFY_TOPIC = 'paylink-clara-ie-4x9mw2';
+  var NTFY_URL   = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
 
-  const MONEY_FIELDS = new Set([
+  var MONEY_FIELDS = new Set([
     'monthly_salary_client','monthly_salary_partner','child_benefit','other_income',
     'monthly_rent_or_mortgage','monthly_secured_loans','monthly_vehicle_finance',
     'monthly_car_insurance','monthly_fuel_parking','monthly_mobile','monthly_broadband',
     'monthly_groceries','monthly_pension','monthly_life_insurance'
   ]);
 
-  const PERSONAL_FIELDS    = ['full_name','date_of_birth','address','employment_status','housing_tenure','dependent_children_under_16','dependent_children_16_18','other_dependants','non_dependants','vehicles'];
-  const INCOME_FIELDS      = ['monthly_salary_client','monthly_salary_partner','child_benefit','other_income'];
-  const EXPENDITURE_FIELDS = ['monthly_rent_or_mortgage','monthly_secured_loans','monthly_vehicle_finance','monthly_car_insurance','monthly_fuel_parking','monthly_mobile','monthly_broadband','monthly_groceries','monthly_pension','monthly_life_insurance'];
-  const ALL_FIELDS         = PERSONAL_FIELDS.concat(INCOME_FIELDS).concat(EXPENDITURE_FIELDS);
+  var PERSONAL_FIELDS    = ['full_name','date_of_birth','address','employment_status','housing_tenure'];
+  var HOUSEHOLD_FIELDS   = ['dependent_children_under_16','dependent_children_16_18','other_dependants','non_dependants','vehicles'];
+  var INCOME_FIELDS      = ['monthly_salary_client','monthly_salary_partner','child_benefit','other_income'];
+  var EXPENDITURE_FIELDS = ['monthly_rent_or_mortgage','monthly_secured_loans','monthly_vehicle_finance','monthly_car_insurance','monthly_fuel_parking','monthly_mobile','monthly_broadband','monthly_groceries','monthly_pension','monthly_life_insurance'];
+  var ALL_FIELDS         = PERSONAL_FIELDS.concat(HOUSEHOLD_FIELDS).concat(INCOME_FIELDS).concat(EXPENDITURE_FIELDS);
+
+  // Section definitions — card ID + fields + next card to scroll to
+  var SECTIONS = [
+    { fields: PERSONAL_FIELDS,    cardId: 'card-personal',    nextId: 'card-household',   barId: 'prog-personal',    pctId: 'prog-personal-pct'    },
+    { fields: HOUSEHOLD_FIELDS,   cardId: 'card-household',   nextId: 'card-income',      barId: 'prog-household',   pctId: 'prog-household-pct'   },
+    { fields: INCOME_FIELDS,      cardId: 'card-income',      nextId: 'card-expenditure', barId: 'prog-income',      pctId: 'prog-income-pct'      },
+    { fields: EXPENDITURE_FIELDS, cardId: 'card-expenditure', nextId: null,               barId: 'prog-expenditure', pctId: 'prog-expenditure-pct' }
+  ];
 
   var filled = {};
+  var sectionScrolled = {};
 
+  // ── SCROLL ──────────────────────────────────────────────────
+  function scrollToCard(cardId) {
+    var el = document.getElementById(cardId);
+    if (!el) return;
+    var headerHeight = 64 + 42; // page-header + status bar
+    var top = el.getBoundingClientRect().top + window.pageYOffset - headerHeight - 16;
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+
+  // ── SECTION COMPLETE CHECK ───────────────────────────────────
+  function checkSectionComplete(section) {
+    var allFilled = section.fields.every(function(f) { return filled[f]; });
+    if (!allFilled) return;
+
+    var card = document.getElementById(section.cardId);
+    if (card) {
+      card.classList.remove('section-active');
+      card.classList.add('section-done');
+    }
+
+    // Scroll to next section after a short delay to let fill animations settle
+    if (section.nextId && !sectionScrolled[section.cardId]) {
+      sectionScrolled[section.cardId] = true;
+      setTimeout(function() {
+        // Highlight next card briefly
+        var nextCard = document.getElementById(section.nextId);
+        if (nextCard) nextCard.classList.add('section-active');
+        scrollToCard(section.nextId);
+      }, 600);
+    }
+  }
+
+  // ── FORMAT ──────────────────────────────────────────────────
   function fmtValue(key, val) {
     if (val === null || val === undefined) return null;
     if (MONEY_FIELDS.has(key)) {
@@ -294,15 +351,14 @@
     return String(val);
   }
 
+  // ── FILL FIELD ───────────────────────────────────────────────
   function fillField(key, val) {
     var el = document.getElementById('f-' + key);
     if (!el) return;
     var display = fmtValue(key, val);
     if (display === null) return;
-
     var tag = el.querySelector('.currency-tag');
     el.classList.add('filling');
-
     setTimeout(function() {
       while (el.firstChild) el.removeChild(el.firstChild);
       el.appendChild(document.createTextNode(display));
@@ -312,9 +368,14 @@
       filled[key] = true;
       updateProgress();
       updateSummary();
+      // Check if this field's section is now complete
+      SECTIONS.forEach(function(s) {
+        if (s.fields.indexOf(key) !== -1) checkSectionComplete(s);
+      });
     }, 320);
   }
 
+  // ── MERGE PAYLOAD ────────────────────────────────────────────
   function mergePayload(data) {
     ALL_FIELDS.forEach(function(key) {
       if (data[key] !== undefined && data[key] !== null && data[key] !== '' && !filled[key]) {
@@ -323,65 +384,61 @@
     });
   }
 
+  // ── PROGRESS BARS ────────────────────────────────────────────
   function pct(fields) {
     var done = fields.filter(function(f) { return filled[f]; }).length;
     return Math.round((done / fields.length) * 100);
   }
 
   function updateProgress() {
-    var sections = [
-      { fields: PERSONAL_FIELDS,    bar: 'prog-personal',    lbl: 'prog-personal-pct'    },
-      { fields: INCOME_FIELDS,      bar: 'prog-income',      lbl: 'prog-income-pct'      },
-      { fields: EXPENDITURE_FIELDS, bar: 'prog-expenditure', lbl: 'prog-expenditure-pct' }
-    ];
-    sections.forEach(function(s) {
+    SECTIONS.forEach(function(s) {
       var p = pct(s.fields);
-      document.getElementById(s.bar).style.width    = p + '%';
-      document.getElementById(s.lbl).textContent = p + '%';
+      document.getElementById(s.barId).style.width  = p + '%';
+      document.getElementById(s.pctId).textContent  = p + '%';
     });
   }
 
+  // ── SUMMARY ──────────────────────────────────────────────────
   function getNum(id) {
     var el = document.getElementById('f-' + id);
     if (!el) return 0;
-    var raw = el.textContent.replace(/[^0-9.]/g, '');
-    return parseFloat(raw) || 0;
+    return parseFloat(el.textContent.replace(/[^0-9.]/g, '')) || 0;
   }
 
   function updateSummary() {
     var income   = INCOME_FIELDS.reduce(function(s,k){ return s + getNum(k); }, 0);
     var outgoing = EXPENDITURE_FIELDS.reduce(function(s,k){ return s + getNum(k); }, 0);
     if (income === 0 && outgoing === 0) return;
-
     var surplus = income - outgoing;
     var gbp = function(n) { return '\u00a3' + Math.abs(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-
     document.getElementById('sum-income').textContent    = gbp(income);
     document.getElementById('sum-outgoings').textContent = gbp(outgoing);
-
     var surplusEl = document.getElementById('sum-surplus');
     surplusEl.textContent = (surplus >= 0 ? '+' : '\u2212') + gbp(surplus);
     surplusEl.className   = 'summary-val ' + (surplus >= 0 ? 'green' : 'red');
     document.getElementById('summary').classList.add('visible');
   }
 
+  // ── STATUS ───────────────────────────────────────────────────
   function setStatus(state, text) {
     document.getElementById('status-bar').className = state;
     document.getElementById('status-text').textContent = text;
   }
 
+  // ── SSE ──────────────────────────────────────────────────────
   function startListening() {
     setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
-    var es = new EventSource(NTFY_URL);
+    // Highlight first card on load
+    var firstCard = document.getElementById('card-personal');
+    if (firstCard) firstCard.classList.add('section-active');
 
+    var es = new EventSource(NTFY_URL);
     es.addEventListener('message', function(e) {
       try {
         var msg  = JSON.parse(e.data);
         var data = typeof msg.message === 'string' ? JSON.parse(msg.message) : msg.message;
-
         setStatus('updating', 'Receiving data from Clara\u2026');
         mergePayload(data);
-
         var allDone = ALL_FIELDS.every(function(f) { return filled[f]; });
         setTimeout(function() {
           if (allDone) {
@@ -391,7 +448,6 @@
             setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
           }
         }, 800);
-
       } catch(err) {
         console.warn('Could not parse ntfy message:', err);
       }
