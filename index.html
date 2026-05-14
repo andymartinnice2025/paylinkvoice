@@ -426,32 +426,66 @@
   }
 
   // ── SSE ──────────────────────────────────────────────────────
+  var activeES = null;
+
   function startListening() {
     setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
+
     // Highlight first card on load
     var firstCard = document.getElementById('card-personal');
-    if (firstCard) firstCard.classList.add('section-active');
+    if (firstCard && !firstCard.classList.contains('section-done')) {
+      firstCard.classList.add('section-active');
+    }
 
-    var es = new EventSource(NTFY_URL);
-    es.addEventListener('message', function(e) {
-      try {
-        var msg  = JSON.parse(e.data);
-        var data = typeof msg.message === 'string' ? JSON.parse(msg.message) : msg.message;
-        setStatus('updating', 'Receiving data from Clara\u2026');
-        mergePayload(data);
-        var allDone = ALL_FIELDS.every(function(f) { return filled[f]; });
-        setTimeout(function() {
-          if (allDone) {
-            setStatus('complete', 'Form complete — all fields captured from Clara.');
-            es.close();
-          } else {
-            setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
-          }
-        }, 800);
-      } catch(err) {
-        console.warn('Could not parse ntfy message:', err);
+    function connect() {
+      // Close any existing connection before opening a new one
+      if (activeES) {
+        activeES.close();
+        activeES = null;
       }
-    });
+
+      var es = new EventSource(NTFY_URL);
+      activeES = es;
+
+      es.addEventListener('message', function(e) {
+        try {
+          var msg  = JSON.parse(e.data);
+          var data = typeof msg.message === 'string' ? JSON.parse(msg.message) : msg.message;
+          setStatus('updating', 'Receiving data from Clara\u2026');
+          mergePayload(data);
+          var allDone = ALL_FIELDS.every(function(f) { return filled[f]; });
+          setTimeout(function() {
+            if (allDone) {
+              setStatus('complete', 'Form complete — all fields captured from Clara.');
+              es.close();
+              activeES = null;
+            } else {
+              setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
+            }
+          }, 800);
+        } catch(err) {
+          console.warn('Could not parse ntfy message:', err);
+        }
+      });
+
+      es.onerror = function() {
+        // Connection dropped — close and reconnect after 3 seconds
+        es.close();
+        activeES = null;
+        setStatus('listening', 'Listening for Clara — form will update as the conversation progresses\u2026');
+        setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+
+    // Keepalive — reconnect every 25 minutes regardless, as browsers
+    // silently drop EventSource connections after ~30 minutes of inactivity
+    setInterval(function() {
+      if (activeES && !ALL_FIELDS.every(function(f) { return filled[f]; })) {
+        connect();
+      }
+    }, 25 * 60 * 1000);
   }
 
   startListening();
